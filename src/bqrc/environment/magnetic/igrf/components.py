@@ -138,12 +138,12 @@ def spherical_to_geodetic_ned(
     geocentric_down = -field.radial_nt
 
     north_nt = (
-        geocentric_north * cos_delta
-        - geocentric_down * sin_delta
+       geocentric_north * cos_delta
+       + geocentric_down * sin_delta
     )
 
     down_nt = (
-        geocentric_north * sin_delta
+        -geocentric_north * sin_delta
         + geocentric_down * cos_delta
     )
 
