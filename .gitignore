@@ -305,3 +305,4 @@ checkpoints/
 .DS_Store
 Thumbs.db
 Desktop.ini
+.venv-reference/
