@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import cos, hypot, isfinite, sin
+from math import cos, hypot, isfinite, sin, sqrt
 
 from bqrc.environment.magnetic.igrf.coefficients import (
     CoefficientKind,
@@ -12,12 +12,6 @@ from bqrc.environment.magnetic.igrf.coefficients import (
 from bqrc.environment.magnetic.igrf.coordinates import (
     IGRF_REFERENCE_RADIUS_M,
     IGRFSphericalPosition,
-)
-from bqrc.environment.magnetic.igrf.legendre import (
-    associated_legendre,
-)
-from bqrc.environment.magnetic.igrf.normalization import (
-    apply_schmidt_normalization,
 )
 
 
@@ -72,136 +66,334 @@ def evaluate_igrf_spherical(
     coefficients: IGRFCoefficientSet,
     position: IGRFSphericalPosition,
 ) -> IGRFSphericalField:
-    """Evaluate an IGRF coefficient set at a geocentric position.
+    """Evaluate IGRF at a geocentric spherical position.
 
-    Parameters
-    ----------
-    coefficients:
-        Complete IGRF coefficient set for the requested epoch.
-    position:
-        Geocentric spherical position.
+    This implementation uses the recurrence convention independently
+    validated against the official Geomag IGRF reference implementation.
 
-    Returns
-    -------
-    IGRFSphericalField
-        Radial, colatitudinal, and eastward magnetic-field components
-        in nanotesla.
-
-    Notes
-    -----
-    This evaluator operates in geocentric spherical coordinates.
-
-    Conversion to geodetic north/east/down components is deliberately
-    performed by a separate transformation layer.
+    The result remains in geocentric spherical coordinates. Conversion
+    into the local geodetic North-East-Down frame is intentionally
+    performed separately by the component-transformation layer.
     """
 
     maximum_degree = coefficients.maximum_degree
 
-    raw_legendre = associated_legendre(
-        maximum_degree=maximum_degree,
-        colatitude_rad=position.geocentric_colatitude_rad,
+    geocentric_latitude = (
+        position.geocentric_latitude_rad
     )
 
-    legendre = apply_schmidt_normalization(
-        raw_legendre
-    )
+    slat = sin(geocentric_latitude)
+    clat = cos(geocentric_latitude)
 
-   
-    theta = position.geocentric_colatitude_rad
     longitude = position.longitude_rad
 
-    sin_theta = sin(theta)
+    # Longitude harmonics.
+    sl = [0.0] * (maximum_degree + 1)
+    cl = [0.0] * (maximum_degree + 1)
 
-    radial_nt = 0.0
-    colatitudinal_nt = 0.0
-    east_nt = 0.0
+    if maximum_degree >= 1:
+        sl[1] = sin(longitude)
+        cl[1] = cos(longitude)
+
+    for order in range(
+        2,
+        maximum_degree + 1,
+    ):
+        sl[order] = (
+            sl[1] * cl[order - 1]
+            + cl[1] * sl[order - 1]
+        )
+
+        cl[order] = (
+            cl[1] * cl[order - 1]
+            - sl[1] * sl[order - 1]
+        )
+
+    # Build the coefficient ordering used by the validated recurrence.
+    gh = _build_gh_array(coefficients)
+
+    npq = (
+        maximum_degree
+        * (maximum_degree + 3)
+    ) // 2
+
+    # One-based indexing is retained here because the validated recurrence
+    # is naturally expressed using this triangular harmonic indexing.
+    p = [0.0] * (npq + 1)
+    q = [0.0] * (npq + 1)
+
+    sqrt_three = sqrt(3.0)
+
+    p[1] = 2.0 * slat
+    p[2] = 2.0 * clat
+
+    if npq >= 3:
+        p[3] = (
+            4.5 * slat * slat
+            - 1.5
+        )
+
+        q[3] = (
+            -3.0
+            * clat
+            * slat
+        )
+
+    if npq >= 4:
+        p[4] = (
+            3.0
+            * sqrt_three
+            * clat
+            * slat
+        )
+
+        q[4] = (
+            sqrt_three
+            * (
+                slat * slat
+                - clat * clat
+            )
+        )
+
+    q[1] = -clat
+    q[2] = slat
 
     radius_ratio = (
         IGRF_REFERENCE_RADIUS_M
         / position.radius_m
     )
 
-    for degree in range(
+    coefficient_index = 1
+
+    degree = 0
+    order = 1
+
+    radial_inward_nt = 0.0
+    north_nt = 0.0
+    east_nt = 0.0
+
+    radial_scale = 0.0
+    degree_float = 0.0
+
+    for harmonic_index in range(
         1,
-        maximum_degree + 1,
+        npq + 1,
     ):
-        radial_scale = radius_ratio ** (
-            degree + 2
+        if degree < order:
+            order = 0
+            degree += 1
+
+            radial_scale = (
+                radius_ratio
+                ** (degree + 2)
+            )
+
+            degree_float = float(degree)
+
+        order_float = float(order)
+
+        if harmonic_index >= 5:
+            if order == degree:
+                recurrence_scale = sqrt(
+                    1.0
+                    - 0.5 / order_float
+                )
+
+                previous_index = (
+                    harmonic_index
+                    - degree
+                    - 1
+                )
+
+                p[harmonic_index] = (
+                    (1.0 + 1.0 / order_float)
+                    * recurrence_scale
+                    * clat
+                    * p[previous_index]
+                )
+
+                q[harmonic_index] = (
+                    recurrence_scale
+                    * (
+                        clat
+                        * q[previous_index]
+                        + slat
+                        / order_float
+                        * p[previous_index]
+                    )
+                )
+
+            else:
+                recurrence_denominator = sqrt(
+                    degree_float * degree_float
+                    - order_float * order_float
+                )
+
+                previous_degree_scale = (
+                    sqrt(
+                        (degree_float - 1.0) ** 2
+                        - order_float * order_float
+                    )
+                    / recurrence_denominator
+                )
+
+                current_degree_scale = (
+                    (2.0 * degree_float - 1.0)
+                    / recurrence_denominator
+                )
+
+                previous_index = (
+                    harmonic_index
+                    - degree
+                )
+
+                previous_previous_index = (
+                    harmonic_index
+                    - 2 * degree
+                    + 1
+                )
+
+                p[harmonic_index] = (
+                    (degree_float + 1.0)
+                    * (
+                        current_degree_scale
+                        * slat
+                        / degree_float
+                        * p[previous_index]
+                        - previous_degree_scale
+                        / (degree_float - 1.0)
+                        * p[previous_previous_index]
+                    )
+                )
+
+                q[harmonic_index] = (
+                    current_degree_scale
+                    * (
+                        slat
+                        * q[previous_index]
+                        - clat
+                        / degree_float
+                        * p[previous_index]
+                    )
+                    - previous_degree_scale
+                    * q[previous_previous_index]
+                )
+
+        g_term = (
+            radial_scale
+            * gh[coefficient_index]
         )
 
+        if order == 0:
+            north_nt += (
+                g_term
+                * q[harmonic_index]
+            )
+
+            radial_inward_nt -= (
+                g_term
+                * p[harmonic_index]
+            )
+
+            coefficient_index += 1
+
+        else:
+            h_term = (
+                radial_scale
+                * gh[coefficient_index + 1]
+            )
+
+            combined_term = (
+                g_term * cl[order]
+                + h_term * sl[order]
+            )
+
+            north_nt += (
+                combined_term
+                * q[harmonic_index]
+            )
+
+            radial_inward_nt -= (
+                combined_term
+                * p[harmonic_index]
+            )
+
+            if abs(clat) > 1e-12:
+                east_nt += (
+                    (
+                        g_term * sl[order]
+                        - h_term * cl[order]
+                    )
+                    * order_float
+                    * p[harmonic_index]
+                    / (
+                        (degree_float + 1.0)
+                        * clat
+                    )
+                )
+
+            else:
+                east_nt += (
+                    (
+                        g_term * sl[order]
+                        - h_term * cl[order]
+                    )
+                    * q[harmonic_index]
+                    * slat
+                )
+
+            coefficient_index += 2
+
+        order += 1
+
+    # The validated recurrence internally produces geocentric north and
+    # inward-radial components. Convert those into the public spherical
+    # convention used by BQRC:
+    #
+    # colatitudinal = -north
+    # radial outward = -radial inward
+    return IGRFSphericalField(
+        radial_nt=-radial_inward_nt,
+        colatitudinal_nt=-north_nt,
+        east_nt=east_nt,
+    )
+
+
+def _build_gh_array(
+    coefficients: IGRFCoefficientSet,
+) -> list[float]:
+    """Build one-based Gauss-coefficient ordering for the recurrence."""
+
+    gh = [0.0]
+
+    for degree in range(
+        1,
+        coefficients.maximum_degree + 1,
+    ):
         for order in range(
             0,
             degree + 1,
         ):
-            g = _coefficient_value(
-                coefficients,
-                CoefficientKind.G,
-                degree,
-                order,
-            )
-
-            h = _coefficient_value(
-                coefficients,
-                CoefficientKind.H,
-                degree,
-                order,
-            )
-
-            angle = order * longitude
-
-            cos_m_longitude = cos(angle)
-            sin_m_longitude = sin(angle)
-
-            harmonic = (
-                g * cos_m_longitude
-                + h * sin_m_longitude
-            )
-
-            p_nm = legendre.get(
-                degree,
-                order,
-            )
-
-            dp_nm = legendre.derivative(
-                degree,
-                order,
-            )
-
-            radial_nt += (
-                (degree + 1)
-                * radial_scale
-                * harmonic
-                * p_nm
-            )
-
-            colatitudinal_nt -= (
-                radial_scale
-                * harmonic
-                * dp_nm
+            gh.append(
+                _coefficient_value(
+                    coefficients,
+                    CoefficientKind.G,
+                    degree,
+                    order,
+                )
             )
 
             if order != 0:
-                azimuthal_numerator = (
-                    order
-                    * (
-                        g * sin_m_longitude
-                        - h * cos_m_longitude
+                gh.append(
+                    _coefficient_value(
+                        coefficients,
+                        CoefficientKind.H,
+                        degree,
+                        order,
                     )
-                    * p_nm
                 )
 
-                if abs(sin_theta) > 1e-12:
-                    east_nt += (
-                        radial_scale
-                        * azimuthal_numerator
-                        / sin_theta
-                    )
-
-    return IGRFSphericalField(
-        radial_nt=radial_nt,
-        colatitudinal_nt=colatitudinal_nt,
-        east_nt=east_nt,
-    )
+    return gh
 
 
 def _coefficient_value(
@@ -212,7 +404,10 @@ def _coefficient_value(
 ) -> float:
     """Return a coefficient value, treating structural h(n,0) as zero."""
 
-    if kind is CoefficientKind.H and order == 0:
+    if (
+        kind is CoefficientKind.H
+        and order == 0
+    ):
         return 0.0
 
     try:
