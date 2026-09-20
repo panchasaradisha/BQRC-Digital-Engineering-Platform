@@ -158,3 +158,32 @@ def test_environment_simulator_includes_microgravity_state() -> None:
         state.microgravity.residual_acceleration.unit
         == "m/s^2"
     )
+def test_environment_simulator_includes_thermal_state() -> None:
+    """Unified environment state should include thermal truth."""
+
+    simulator = SpaceEnvironmentSimulator.from_igrf14_dataset(
+        IGRF14_DATASET
+    )
+
+    state = simulator.evaluate(
+        create_orbital_state()
+    )
+
+    assert state.thermal.solar.solar_irradiance_w_m2 > 0.0
+
+    assert (
+        0.0
+        <= state.thermal.eclipse.sunlight_fraction
+        <= 1.0
+    )
+
+    assert state.thermal.earth_flux.infrared_flux_w_m2 > 0.0
+
+    assert state.thermal.earth_flux.albedo_flux_w_m2 >= 0.0
+
+    assert state.thermal.direct_solar_flux_w_m2 >= 0.0
+
+    assert (
+        state.thermal.solar.earth_to_sun_unit.frame
+        == ReferenceFrame.ECI
+    )

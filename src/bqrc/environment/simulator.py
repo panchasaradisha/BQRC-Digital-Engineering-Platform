@@ -1,11 +1,20 @@
 """Unified BQRC space-environment simulator.
 
-This module coordinates the validated orbital, Earth-coordinate,
-geomagnetic, and residual-microgravity environment models and exposes
-them through a single environment-state interface.
+This module coordinates the validated BQRC environment models and
+exposes them through a single environment-state interface.
 
-Additional environment models such as radiation and thermal conditions
-will be integrated through this orchestration layer as they mature.
+The unified environment currently includes:
+
+- orbital state to WGS-84 Earth location,
+- IGRF-14 geomagnetic field,
+- residual microgravity,
+- solar environment,
+- Earth eclipse state,
+- Earth infrared radiation,
+- Earth albedo radiation.
+
+Additional environment models such as radiation will be integrated
+through this orchestration layer as they mature.
 """
 
 from __future__ import annotations
@@ -41,6 +50,10 @@ from bqrc.environment.microgravity import (
     MicrogravityState,
 )
 from bqrc.environment.orbit import OrbitalState
+from bqrc.environment.thermal import (
+    ThermalEnvironmentState,
+    evaluate_thermal_environment,
+)
 from bqrc.frames import eci_to_ecef
 
 
@@ -59,7 +72,9 @@ class SpaceEnvironmentState:
     magnetic_field:
         Local geomagnetic field in the geodetic North-East-Down frame.
     microgravity:
-        Residual/non-gravitational acceleration environment.
+        Residual microgravity state in the ECI frame.
+    thermal:
+        Solar, eclipse, Earth infrared, and Earth albedo environment.
     """
 
     timestamp: datetime
@@ -67,6 +82,7 @@ class SpaceEnvironmentState:
     igrf_epoch: float
     magnetic_field: GeodeticMagneticField
     microgravity: MicrogravityState
+    thermal: ThermalEnvironmentState
 
     def __post_init__(self) -> None:
         """Validate basic environment-state invariants."""
@@ -121,25 +137,13 @@ def datetime_to_decimal_year(timestamp: datetime) -> float:
 
 
 class SpaceEnvironmentSimulator:
-    """Coordinate BQRC space-environment models."""
+    """Coordinate the unified BQRC space-environment models."""
 
     def __init__(
         self,
         igrf_base_coefficients: IGRFCoefficientSet,
-        microgravity_model: MicrogravityModel | None = None,
     ) -> None:
-        """Create the unified BQRC environment simulator.
-
-        Parameters
-        ----------
-        igrf_base_coefficients:
-            Validated IGRF-14 main-field coefficient set representing
-            epoch 2025.0.
-        microgravity_model:
-            Residual-microgravity model used by the simulator. If no
-            model is supplied, the default ideal free-fall model is
-            created automatically.
-        """
+        """Create a simulator from validated IGRF base coefficients."""
 
         if igrf_base_coefficients.model != "IGRF-14":
             raise ValueError(
@@ -155,43 +159,28 @@ class SpaceEnvironmentSimulator:
             igrf_base_coefficients
         )
 
-        self._microgravity_model = (
-            microgravity_model
-            if microgravity_model is not None
-            else MicrogravityModel()
-        )
+        self._microgravity_model = MicrogravityModel()
 
     @classmethod
     def from_igrf14_dataset(
         cls,
         dataset: Path,
-        microgravity_model: MicrogravityModel | None = None,
     ) -> SpaceEnvironmentSimulator:
-        """Create a simulator directly from the IGRF-14 dataset.
-
-        Parameters
-        ----------
-        dataset:
-            Path to the validated IGRF-14 coefficient dataset.
-        microgravity_model:
-            Optional residual-microgravity model. If omitted, the
-            default ideal free-fall model is used.
-        """
+        """Create a simulator directly from the IGRF-14 dataset."""
 
         coefficients = load_igrf14_2025(
             dataset
         )
 
         return cls(
-            igrf_base_coefficients=coefficients,
-            microgravity_model=microgravity_model,
+            igrf_base_coefficients=coefficients
         )
 
     def evaluate(
         self,
         orbital_state: OrbitalState,
     ) -> SpaceEnvironmentState:
-        """Evaluate the environment for one orbital state."""
+        """Evaluate all integrated environment models for one state."""
 
         ecef_position = eci_to_ecef(
             orbital_state.position,
@@ -232,10 +221,17 @@ class SpaceEnvironmentSimulator:
             orbital_state
         )
 
+        thermal = evaluate_thermal_environment(
+            timestamp=orbital_state.timestamp,
+            spacecraft_position=orbital_state.position,
+            altitude_m=geodetic_position.altitude_m,
+        )
+
         return SpaceEnvironmentState(
             timestamp=orbital_state.timestamp,
             geodetic_position=geodetic_position,
             igrf_epoch=epoch,
             magnetic_field=magnetic_field,
             microgravity=microgravity,
+            thermal=thermal,
         )
