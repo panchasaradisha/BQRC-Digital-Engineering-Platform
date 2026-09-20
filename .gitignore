@@ -216,3 +216,92 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ============================================================
+# BQRC Digital Engineering Platform
+# Project-specific generated and local artifacts
+# ============================================================
+
+# ------------------------------------------------------------
+# Local environment and secrets
+# ------------------------------------------------------------
+
+.env.local
+.env.*.local
+
+# ------------------------------------------------------------
+# BQRC runtime logs
+# ------------------------------------------------------------
+
+logs/
+*.log
+
+# ------------------------------------------------------------
+# Large / generated scientific datasets
+#
+# Dataset directories are kept in the repository using
+# .gitkeep files. Actual datasets should only be committed
+# intentionally after provenance and licensing review.
+# ------------------------------------------------------------
+
+data/raw/*
+!data/raw/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+
+data/synthetic/*
+!data/synthetic/.gitkeep
+
+data/hybrid/*
+!data/hybrid/.gitkeep
+
+data/replay/*
+!data/replay/.gitkeep
+
+# Reference data is treated differently.
+# Small, licensed, provenance-controlled reference files may
+# eventually be version controlled intentionally.
+# ------------------------------------------------------------
+
+# data/reference/ is NOT globally ignored.
+
+# ------------------------------------------------------------
+# Experiment outputs
+# ------------------------------------------------------------
+
+experiments/*
+!experiments/.gitkeep
+
+# ------------------------------------------------------------
+# Generated simulation outputs
+# ------------------------------------------------------------
+
+outputs/
+results/
+
+# ------------------------------------------------------------
+# Machine-learning artifacts
+# ------------------------------------------------------------
+
+models/
+checkpoints/
+*.ckpt
+*.pth
+*.pt
+*.onnx
+
+# ------------------------------------------------------------
+# Temporary scientific files
+# ------------------------------------------------------------
+
+*.tmp
+*.temp
+
+# ------------------------------------------------------------
+# Local operating-system artifacts
+# ------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+Desktop.ini
