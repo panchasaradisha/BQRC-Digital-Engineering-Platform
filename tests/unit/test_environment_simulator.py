@@ -127,3 +127,34 @@ def test_environment_simulator_evaluates_orbit_state() -> None:
     )
 
     assert 2027.0 < state.igrf_epoch < 2028.0
+
+
+def test_environment_simulator_includes_microgravity_state() -> None:
+    """Unified environment state should include microgravity truth."""
+
+    simulator = SpaceEnvironmentSimulator.from_igrf14_dataset(
+        IGRF14_DATASET
+    )
+
+    state = simulator.evaluate(
+        create_orbital_state()
+    )
+
+    assert state.microgravity.magnitude_m_s2 == pytest.approx(
+        0.0,
+        abs=1e-15,
+    )
+
+    assert state.microgravity.magnitude_micro_g == pytest.approx(
+        0.0,
+        abs=1e-12,
+    )
+
+    assert state.microgravity.residual_acceleration.frame == (
+        ReferenceFrame.ECI
+    )
+
+    assert (
+        state.microgravity.residual_acceleration.unit
+        == "m/s^2"
+    )

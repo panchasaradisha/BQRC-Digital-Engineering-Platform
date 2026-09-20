@@ -1,12 +1,11 @@
 """Unified BQRC space-environment simulator.
 
-This module coordinates the validated orbital, Earth-coordinate, and
-geomagnetic environment models and exposes them through a single
-environment-state interface.
+This module coordinates the validated orbital, Earth-coordinate,
+geomagnetic, and residual-microgravity environment models and exposes
+them through a single environment-state interface.
 
-Additional environment models such as microgravity, radiation, and
-thermal conditions will be integrated through this orchestration layer
-as they mature.
+Additional environment models such as radiation and thermal conditions
+will be integrated through this orchestration layer as they mature.
 """
 
 from __future__ import annotations
@@ -37,6 +36,10 @@ from bqrc.environment.magnetic.igrf.parser import (
 from bqrc.environment.magnetic.igrf.temporal import (
     predict_igrf14_coefficients,
 )
+from bqrc.environment.microgravity import (
+    MicrogravityModel,
+    MicrogravityState,
+)
 from bqrc.environment.orbit import OrbitalState
 from bqrc.frames import eci_to_ecef
 
@@ -55,12 +58,15 @@ class SpaceEnvironmentState:
         Decimal-year epoch used for IGRF evaluation.
     magnetic_field:
         Local geomagnetic field in the geodetic North-East-Down frame.
+    microgravity:
+        Residual/non-gravitational acceleration environment.
     """
 
     timestamp: datetime
     geodetic_position: GeodeticPosition
     igrf_epoch: float
     magnetic_field: GeodeticMagneticField
+    microgravity: MicrogravityState
 
     def __post_init__(self) -> None:
         """Validate basic environment-state invariants."""
@@ -120,8 +126,20 @@ class SpaceEnvironmentSimulator:
     def __init__(
         self,
         igrf_base_coefficients: IGRFCoefficientSet,
+        microgravity_model: MicrogravityModel | None = None,
     ) -> None:
-        """Create a simulator from validated IGRF base coefficients."""
+        """Create the unified BQRC environment simulator.
+
+        Parameters
+        ----------
+        igrf_base_coefficients:
+            Validated IGRF-14 main-field coefficient set representing
+            epoch 2025.0.
+        microgravity_model:
+            Residual-microgravity model used by the simulator. If no
+            model is supplied, the default ideal free-fall model is
+            created automatically.
+        """
 
         if igrf_base_coefficients.model != "IGRF-14":
             raise ValueError(
@@ -137,19 +155,36 @@ class SpaceEnvironmentSimulator:
             igrf_base_coefficients
         )
 
+        self._microgravity_model = (
+            microgravity_model
+            if microgravity_model is not None
+            else MicrogravityModel()
+        )
+
     @classmethod
     def from_igrf14_dataset(
         cls,
         dataset: Path,
+        microgravity_model: MicrogravityModel | None = None,
     ) -> SpaceEnvironmentSimulator:
-        """Create a simulator directly from the IGRF-14 dataset."""
+        """Create a simulator directly from the IGRF-14 dataset.
+
+        Parameters
+        ----------
+        dataset:
+            Path to the validated IGRF-14 coefficient dataset.
+        microgravity_model:
+            Optional residual-microgravity model. If omitted, the
+            default ideal free-fall model is used.
+        """
 
         coefficients = load_igrf14_2025(
             dataset
         )
 
         return cls(
-            igrf_base_coefficients=coefficients
+            igrf_base_coefficients=coefficients,
+            microgravity_model=microgravity_model,
         )
 
     def evaluate(
@@ -193,9 +228,14 @@ class SpaceEnvironmentSimulator:
             spherical_position=spherical_position,
         )
 
+        microgravity = self._microgravity_model.evaluate(
+            orbital_state
+        )
+
         return SpaceEnvironmentState(
             timestamp=orbital_state.timestamp,
             geodetic_position=geodetic_position,
             igrf_epoch=epoch,
             magnetic_field=magnetic_field,
+            microgravity=microgravity,
         )
