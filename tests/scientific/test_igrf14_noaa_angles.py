@@ -115,3 +115,61 @@ def test_igrf14_angles_against_noaa(
         abs=ANGLE_TOLERANCE_DEG,
         rel=0,
     )
+
+def test_igrf14_orbital_altitude_angles_against_noaa() -> None:
+    """Check NOAA angular reference at 400 km orbital altitude.
+
+    NOAA reference date: 2027-07-02.
+    BQRC decimal epoch: 2027.5.
+
+    The epochs are approximately 12 hours apart, so the
+    comparison allows a small additional temporal difference.
+    """
+
+    from bqrc.environment.magnetic.igrf.temporal import (
+        predict_igrf14_coefficients,
+    )
+
+    base_coefficients = load_igrf14_2025(IGRF14_DATASET)
+
+    coefficients = predict_igrf14_coefficients(
+        base=base_coefficients,
+        epoch=2027.5,
+    )
+
+    geodetic = GeodeticPosition(
+        latitude_deg=23.0,
+        longitude_deg=72.5,
+        altitude_m=400_000.0,
+    )
+
+    spherical_position = geodetic_to_igrf_spherical(
+        geodetic
+    )
+
+    spherical_field = evaluate_igrf_spherical(
+        coefficients=coefficients,
+        position=spherical_position,
+    )
+
+    field = spherical_to_geodetic_ned(
+        field=spherical_field,
+        geodetic_position=geodetic,
+        spherical_position=spherical_position,
+    )
+
+    # NOAA displayed angular precision is 0.0001 degree.
+    # Additional tolerance covers the small epoch mismatch.
+    tolerance_deg = 0.0002
+
+    assert field.declination_deg == pytest.approx(
+        0.4293,
+        abs=tolerance_deg,
+        rel=0,
+    )
+
+    assert field.inclination_deg == pytest.approx(
+        35.4244,
+        abs=tolerance_deg,
+        rel=0,
+    )
