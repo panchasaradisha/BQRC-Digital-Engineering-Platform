@@ -8,7 +8,8 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
-from bqrc.algorithms.odmr.shot_noise import simulate_photon_shot_noise
+from bqrc.algorithms.odmr.field_estimator import estimate_nv_field_from_odmr
+from bqrc.algorithms.odmr.shot_noise import NoisyODMRSpectrum, simulate_photon_shot_noise
 from bqrc.algorithms.odmr.spectrum import simulate_odmr_spectrum
 from bqrc.sensors.nv.resonance import (
     ZERO_FIELD_SPLITTING_MHZ,
@@ -191,4 +192,92 @@ def calculate_noisy_odmr_spectrum(
         lower_mhz=resonance.lower_mhz,
         upper_mhz=resonance.upper_mhz,
         projected_field_nt=resonance.projected_field_nt,
+    )
+
+class NVFieldEstimationRequest(BaseModel):
+    """Measured photon-count data for NV magnetic-field estimation."""
+
+    frequencies_mhz: list[FiniteFloat] = Field(
+        min_length=5,
+        max_length=5000,
+    )
+    photon_counts: list[int] = Field(
+        min_length=5,
+        max_length=5000,
+    )
+    reference_photon_count: PositiveFiniteFloat = Field(
+        gt=0.0,
+        le=1e12,
+    )
+    contrast: FiniteFloat = Field(
+        default=0.1,
+        gt=0.0,
+        le=0.5,
+    )
+    linewidth_mhz: PositiveFiniteFloat = 1.0
+    zero_field_splitting_mhz: PositiveFiniteFloat = (
+        ZERO_FIELD_SPLITTING_MHZ
+    )
+
+    @field_validator("photon_counts")
+    @classmethod
+    def validate_photon_counts(cls, value: list[int]) -> list[int]:
+        """Reject negative photon counts."""
+        if any(count < 0 for count in value):
+            raise ValueError("photon_counts must be nonnegative")
+        return value
+
+
+class NVFieldEstimationResponse(BaseModel):
+    """Estimated NV-axis field magnitude and fitting diagnostics."""
+
+    lower_mhz: float
+    upper_mhz: float
+    projected_field_magnitude_nt: float
+    residual_rmse: float
+    fit_success: bool
+
+
+@router.post("/odmr/estimate-field", response_model=NVFieldEstimationResponse)
+def estimate_odmr_field(
+    request: NVFieldEstimationRequest,
+) -> NVFieldEstimationResponse:
+    """Estimate projected field magnitude from measured photon counts."""
+    if len(request.frequencies_mhz) != len(request.photon_counts):
+        raise HTTPException(
+            status_code=422,
+            detail="frequency and photon-count arrays must have equal lengths",
+        )
+
+    measured_fluorescence = tuple(
+        count / request.reference_photon_count
+        for count in request.photon_counts
+    )
+
+    measured = NoisyODMRSpectrum(
+        frequencies_mhz=tuple(request.frequencies_mhz),
+        photon_counts=tuple(request.photon_counts),
+        fluorescence=measured_fluorescence,
+        reference_photon_count=request.reference_photon_count,
+    )
+
+    try:
+        estimate = estimate_nv_field_from_odmr(
+            measured=measured,
+            contrast=request.contrast,
+            linewidth_mhz=request.linewidth_mhz,
+            zero_field_splitting_mhz=request.zero_field_splitting_mhz,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return NVFieldEstimationResponse(
+        lower_mhz=estimate.lower_mhz,
+        upper_mhz=estimate.upper_mhz,
+        projected_field_magnitude_nt=estimate.projected_field_magnitude_nt,
+        residual_rmse=estimate.residual_rmse,
+        fit_success=estimate.fit_success,
     )
