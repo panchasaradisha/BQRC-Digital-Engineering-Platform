@@ -341,3 +341,155 @@ def calculate_field_uncertainty(
         ),
         identifiable_locally=result.identifiable_locally,
     )
+
+class NVMeasurementRequest(NoisyODMRSpectrumRequest):
+    """Parameters for a complete NV ODMR measurement workflow."""
+
+    frequencies_mhz: list[FiniteFloat] = Field(
+        min_length=5,
+        max_length=5000,
+    )
+    contrast: FiniteFloat = Field(
+        default=0.1,
+        gt=0.0,
+        le=0.5,
+    )
+
+
+class NVMeasurementResponse(BaseModel):
+    """Simulation, fitted field, and theoretical uncertainty."""
+
+    simulation: NoisyODMRSpectrumResponse
+    estimation: NVFieldEstimationResponse | None
+    uncertainty: NVFieldUncertaintyResponse | None
+    fit_success: bool
+
+
+@router.post(
+    "/odmr/measurement",
+    response_model=NVMeasurementResponse,
+)
+def run_nv_measurement(
+    request: NVMeasurementRequest,
+) -> NVMeasurementResponse:
+    """Run a complete simulated NV magnetometry measurement."""
+
+    frequencies = tuple(request.frequencies_mhz)
+
+    if not (
+        min(frequencies)
+        < request.zero_field_splitting_mhz
+        < max(frequencies)
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="frequency grid must span the zero-field splitting",
+        )
+
+    try:
+        resonance = calculate_nv_resonance(
+            magnetic_field_nt=request.magnetic_field_nt,
+            nv_axis=request.nv_axis,
+            zero_field_splitting_mhz=request.zero_field_splitting_mhz,
+        )
+
+        ideal = simulate_odmr_spectrum(
+            resonance=resonance,
+            frequencies_mhz=frequencies,
+            contrast=request.contrast,
+            linewidth_mhz=request.linewidth_mhz,
+        )
+
+        noisy = simulate_photon_shot_noise(
+            spectrum=ideal,
+            reference_photon_count=request.reference_photon_count,
+            seed=request.seed,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    simulation = NoisyODMRSpectrumResponse(
+        frequencies_mhz=list(noisy.frequencies_mhz),
+        ideal_fluorescence=list(ideal.fluorescence),
+        measured_fluorescence=list(noisy.fluorescence),
+        photon_counts=list(noisy.photon_counts),
+        reference_photon_count=noisy.reference_photon_count,
+        lower_mhz=resonance.lower_mhz,
+        upper_mhz=resonance.upper_mhz,
+        projected_field_nt=resonance.projected_field_nt,
+    )
+
+    try:
+        fitted = estimate_nv_field_from_odmr(
+            measured=noisy,
+            contrast=request.contrast,
+            linewidth_mhz=request.linewidth_mhz,
+            zero_field_splitting_mhz=request.zero_field_splitting_mhz,
+        )
+    except (ValueError, RuntimeError):
+        return NVMeasurementResponse(
+            simulation=simulation,
+            estimation=None,
+            uncertainty=None,
+            fit_success=False,
+        )
+
+    if not fitted.fit_success:
+        return NVMeasurementResponse(
+            simulation=simulation,
+            estimation=None,
+            uncertainty=None,
+            fit_success=False,
+        )
+
+    estimation = NVFieldEstimationResponse(
+        lower_mhz=fitted.lower_mhz,
+        upper_mhz=fitted.upper_mhz,
+        projected_field_magnitude_nt=(
+            fitted.projected_field_magnitude_nt
+        ),
+        residual_rmse=fitted.residual_rmse,
+        fit_success=True,
+    )
+
+    try:
+        uncertainty_result = analyze_nv_field_uncertainty(
+            frequencies_mhz=frequencies,
+            projected_field_magnitude_nt=(
+                fitted.projected_field_magnitude_nt
+            ),
+            reference_photon_count=request.reference_photon_count,
+            contrast=request.contrast,
+            linewidth_mhz=request.linewidth_mhz,
+            zero_field_splitting_mhz=request.zero_field_splitting_mhz,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    uncertainty = NVFieldUncertaintyResponse(
+        fisher_information_per_nt_squared=(
+            uncertainty_result.fisher_information_per_nt_squared
+        ),
+        crlb_std_nt=(
+            uncertainty_result.crlb_std_nt
+            if uncertainty_result.identifiable_locally
+            else None
+        ),
+        identifiable_locally=(
+            uncertainty_result.identifiable_locally
+        ),
+    )
+
+    return NVMeasurementResponse(
+        simulation=simulation,
+        estimation=estimation,
+        uncertainty=uncertainty,
+        fit_success=True,
+    )
