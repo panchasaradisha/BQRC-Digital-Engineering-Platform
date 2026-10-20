@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
+from bqrc.algorithms.odmr.shot_noise import simulate_photon_shot_noise
 from bqrc.algorithms.odmr.spectrum import simulate_odmr_spectrum
 from bqrc.sensors.nv.resonance import (
     ZERO_FIELD_SPLITTING_MHZ,
@@ -123,6 +124,70 @@ def calculate_odmr_spectrum(
     return ODMRSpectrumResponse(
         frequencies_mhz=list(spectrum.frequencies_mhz),
         fluorescence=list(spectrum.fluorescence),
+        lower_mhz=resonance.lower_mhz,
+        upper_mhz=resonance.upper_mhz,
+        projected_field_nt=resonance.projected_field_nt,
+    )
+
+class NoisyODMRSpectrumRequest(ODMRSpectrumRequest):
+    """Input parameters for photon shot-noise ODMR simulation."""
+
+    reference_photon_count: PositiveFiniteFloat = Field(
+        default=100_000.0,
+        le=1e12,
+    )
+    seed: int | None = Field(default=42, ge=0, le=2**32 - 1)
+
+
+class NoisyODMRSpectrumResponse(BaseModel):
+    """Ideal and noisy ODMR measurements with resonance metadata."""
+
+    frequencies_mhz: list[float]
+    ideal_fluorescence: list[float]
+    measured_fluorescence: list[float]
+    photon_counts: list[int]
+    reference_photon_count: float
+    lower_mhz: float
+    upper_mhz: float
+    projected_field_nt: float
+
+
+@router.post("/odmr/noisy-spectrum", response_model=NoisyODMRSpectrumResponse)
+def calculate_noisy_odmr_spectrum(
+    request: NoisyODMRSpectrumRequest,
+) -> NoisyODMRSpectrumResponse:
+    """Simulate an NV ODMR spectrum with Poisson photon shot noise."""
+    try:
+        resonance = calculate_nv_resonance(
+            magnetic_field_nt=request.magnetic_field_nt,
+            nv_axis=request.nv_axis,
+            zero_field_splitting_mhz=request.zero_field_splitting_mhz,
+        )
+
+        ideal = simulate_odmr_spectrum(
+            resonance=resonance,
+            frequencies_mhz=tuple(request.frequencies_mhz),
+            contrast=request.contrast,
+            linewidth_mhz=request.linewidth_mhz,
+        )
+
+        noisy = simulate_photon_shot_noise(
+            spectrum=ideal,
+            reference_photon_count=request.reference_photon_count,
+            seed=request.seed,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return NoisyODMRSpectrumResponse(
+        frequencies_mhz=list(noisy.frequencies_mhz),
+        ideal_fluorescence=list(ideal.fluorescence),
+        measured_fluorescence=list(noisy.fluorescence),
+        photon_counts=list(noisy.photon_counts),
+        reference_photon_count=noisy.reference_photon_count,
         lower_mhz=resonance.lower_mhz,
         upper_mhz=resonance.upper_mhz,
         projected_field_nt=resonance.projected_field_nt,
