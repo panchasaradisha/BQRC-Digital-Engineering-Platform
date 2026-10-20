@@ -18,6 +18,7 @@ from bqrc.algorithms.odmr.spectrum import (
     simulate_odmr_spectrum,
 )
 from bqrc.environment.simulator import SpaceEnvironmentState
+from bqrc.frames.attitude import Quaternion
 from bqrc.sensors.nv.resonance import (
     NVResonance,
     calculate_nv_resonance,
@@ -69,4 +70,30 @@ def simulate_nv_environment_response(
     return NVEnvironmentResponse(
         resonance=resonance,
         spectrum=spectrum,
+    )
+
+def simulate_attitude_aware_nv_response(
+    environment: SpaceEnvironmentState,
+    nv_axis_body: tuple[float, float, float],
+    attitude_body_to_ned: Quaternion,
+    frequencies_mhz: tuple[float, ...],
+    contrast: float = 0.1,
+    linewidth_mhz: float = 1.0,
+) -> NVEnvironmentResponse:
+    """Simulate NV ODMR using spacecraft body-frame sensor orientation.
+
+    The attitude quaternion actively rotates the body-frame NV axis
+    into the local North-East-Down frame.
+
+    The magnetic environment remains expressed in local NED.
+    """
+
+    nv_axis_ned = attitude_body_to_ned.rotate_components(nv_axis_body)
+
+    return simulate_nv_environment_response(
+        environment=environment,
+        nv_axis_ned=nv_axis_ned,
+        frequencies_mhz=frequencies_mhz,
+        contrast=contrast,
+        linewidth_mhz=linewidth_mhz,
     )

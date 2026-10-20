@@ -15,7 +15,9 @@ from bqrc.environment.earth import (
 from bqrc.environment.orbit import OrbitalState
 from bqrc.environment.simulator import SpaceEnvironmentSimulator
 from bqrc.frames import ReferenceFrame, Vector3
+from bqrc.frames.attitude import Quaternion
 from bqrc.sensors.nv.environment_adapter import (
+    simulate_attitude_aware_nv_response,
     simulate_nv_environment_response,
 )
 from bqrc.sensors.nv.resonance import (
@@ -150,4 +152,68 @@ def test_real_igrf14_to_nv_odmr_pipeline() -> None:
     assert all(
         0.0 <= value <= 1.0
         for value in response.spectrum.fluorescence
+    )
+
+def test_real_igrf14_attitude_aware_nv_pipeline() -> None:
+    """Verify spacecraft attitude changes NV projection in real IGRF-14 field."""
+
+    simulator = SpaceEnvironmentSimulator.from_igrf14_dataset(
+        IGRF14_DATASET
+    )
+    environment = simulator.evaluate(create_orbital_state())
+
+    magnetic_field = environment.magnetic_field
+    frequencies = (2868.0, 2870.0, 2872.0)
+    axis_body = (1.0, 0.0, 0.0)
+
+    identity_response = simulate_attitude_aware_nv_response(
+        environment=environment,
+        nv_axis_body=axis_body,
+        attitude_body_to_ned=Quaternion(1.0, 0.0, 0.0, 0.0),
+        frequencies_mhz=frequencies,
+    )
+
+    half_sqrt = sqrt(0.5)
+
+    rotated_response = simulate_attitude_aware_nv_response(
+        environment=environment,
+        nv_axis_body=axis_body,
+        attitude_body_to_ned=Quaternion(
+            half_sqrt, 0.0, 0.0, half_sqrt
+        ),
+        frequencies_mhz=frequencies,
+    )
+
+    assert identity_response.resonance.projected_field_nt == pytest.approx(
+        magnetic_field.north_nt,
+        abs=1e-8,
+    )
+
+    assert rotated_response.resonance.projected_field_nt == pytest.approx(
+        magnetic_field.east_nt,
+        abs=1e-8,
+    )
+
+    assert identity_response.resonance.projected_field_nt != pytest.approx(
+        rotated_response.resonance.projected_field_nt
+    )
+
+    assert (
+        identity_response.resonance.upper_mhz
+        - identity_response.resonance.lower_mhz
+    ) == pytest.approx(
+        2.0
+        * ELECTRON_GYROMAGNETIC_RATIO_MHZ_PER_T
+        * abs(magnetic_field.north_nt)
+        / 1e9
+    )
+
+    assert (
+        rotated_response.resonance.upper_mhz
+        - rotated_response.resonance.lower_mhz
+    ) == pytest.approx(
+        2.0
+        * ELECTRON_GYROMAGNETIC_RATIO_MHZ_PER_T
+        * abs(magnetic_field.east_nt)
+        / 1e9
     )
