@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from bqrc.algorithms.odmr.field_estimator import estimate_nv_field_from_odmr
+from bqrc.algorithms.odmr.field_uncertainty import analyze_nv_field_uncertainty
 from bqrc.algorithms.odmr.shot_noise import NoisyODMRSpectrum, simulate_photon_shot_noise
 from bqrc.algorithms.odmr.spectrum import simulate_odmr_spectrum
 from bqrc.sensors.nv.resonance import (
@@ -280,4 +281,63 @@ def estimate_odmr_field(
         projected_field_magnitude_nt=estimate.projected_field_magnitude_nt,
         residual_rmse=estimate.residual_rmse,
         fit_success=estimate.fit_success,
+    )
+
+class NVFieldUncertaintyRequest(BaseModel):
+    """Parameters for theoretical NV magnetic-field uncertainty."""
+
+    frequencies_mhz: list[FiniteFloat] = Field(
+        min_length=1,
+        max_length=5000,
+    )
+    projected_field_magnitude_nt: FiniteFloat = Field(ge=0.0)
+    reference_photon_count: PositiveFiniteFloat = Field(le=1e12)
+    contrast: FiniteFloat = Field(default=0.1, ge=0.0, le=0.5)
+    linewidth_mhz: PositiveFiniteFloat = 1.0
+    zero_field_splitting_mhz: PositiveFiniteFloat = (
+        ZERO_FIELD_SPLITTING_MHZ
+    )
+
+
+class NVFieldUncertaintyResponse(BaseModel):
+    """Poisson Fisher information and theoretical CRLB."""
+
+    fisher_information_per_nt_squared: float
+    crlb_std_nt: float | None
+    identifiable_locally: bool
+
+
+@router.post(
+    "/odmr/field-uncertainty",
+    response_model=NVFieldUncertaintyResponse,
+)
+def calculate_field_uncertainty(
+    request: NVFieldUncertaintyRequest,
+) -> NVFieldUncertaintyResponse:
+    """Calculate theoretical uncertainty for NV-axis field magnitude."""
+    try:
+        result = analyze_nv_field_uncertainty(
+            frequencies_mhz=tuple(request.frequencies_mhz),
+            projected_field_magnitude_nt=request.projected_field_magnitude_nt,
+            reference_photon_count=request.reference_photon_count,
+            contrast=request.contrast,
+            linewidth_mhz=request.linewidth_mhz,
+            zero_field_splitting_mhz=request.zero_field_splitting_mhz,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return NVFieldUncertaintyResponse(
+        fisher_information_per_nt_squared=(
+            result.fisher_information_per_nt_squared
+        ),
+        crlb_std_nt=(
+            result.crlb_std_nt
+            if result.identifiable_locally
+            else None
+        ),
+        identifiable_locally=result.identifiable_locally,
     )
