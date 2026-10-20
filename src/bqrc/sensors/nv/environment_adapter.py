@@ -13,6 +13,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from bqrc.algorithms.odmr.shot_noise import (
+    NoisyODMRSpectrum,
+    simulate_photon_shot_noise,
+)
 from bqrc.algorithms.odmr.spectrum import (
     ODMRSpectrum,
     simulate_odmr_spectrum,
@@ -96,4 +100,76 @@ def simulate_attitude_aware_nv_response(
         frequencies_mhz=frequencies_mhz,
         contrast=contrast,
         linewidth_mhz=linewidth_mhz,
+    )
+
+@dataclass(frozen=True, slots=True)
+class NVMeasurementResponse:
+    """Ideal NV response together with a noisy photon measurement."""
+
+    ideal: NVEnvironmentResponse
+    measured: NoisyODMRSpectrum
+
+
+def simulate_nv_measurement(
+    environment: SpaceEnvironmentState,
+    nv_axis_ned: tuple[float, float, float],
+    frequencies_mhz: tuple[float, ...],
+    reference_photon_count: float,
+    contrast: float = 0.1,
+    linewidth_mhz: float = 1.0,
+    seed: int | None = None,
+) -> NVMeasurementResponse:
+    """Simulate ideal NV ODMR followed by photon shot-noise detection.
+
+    The NV axis is expressed in local geodetic NED coordinates.
+    """
+
+    ideal = simulate_nv_environment_response(
+        environment=environment,
+        nv_axis_ned=nv_axis_ned,
+        frequencies_mhz=frequencies_mhz,
+        contrast=contrast,
+        linewidth_mhz=linewidth_mhz,
+    )
+
+    measured = simulate_photon_shot_noise(
+        spectrum=ideal.spectrum,
+        reference_photon_count=reference_photon_count,
+        seed=seed,
+    )
+
+    return NVMeasurementResponse(
+        ideal=ideal,
+        measured=measured,
+    )
+
+
+def simulate_attitude_aware_nv_measurement(
+    environment: SpaceEnvironmentState,
+    nv_axis_body: tuple[float, float, float],
+    attitude_body_to_ned: Quaternion,
+    frequencies_mhz: tuple[float, ...],
+    reference_photon_count: float,
+    contrast: float = 0.1,
+    linewidth_mhz: float = 1.0,
+    seed: int | None = None,
+) -> NVMeasurementResponse:
+    """Simulate attitude-aware NV ODMR with photon shot noise.
+
+    The attitude quaternion rotates the body-frame NV axis into
+    the local geodetic NED frame before calculating resonance.
+    """
+
+    nv_axis_ned = attitude_body_to_ned.rotate_components(
+        nv_axis_body
+    )
+
+    return simulate_nv_measurement(
+        environment=environment,
+        nv_axis_ned=nv_axis_ned,
+        frequencies_mhz=frequencies_mhz,
+        reference_photon_count=reference_photon_count,
+        contrast=contrast,
+        linewidth_mhz=linewidth_mhz,
+        seed=seed,
     )
