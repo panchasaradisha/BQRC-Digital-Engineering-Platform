@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
+from bqrc.algorithms.odmr.spectrum import simulate_odmr_spectrum
 from bqrc.sensors.nv.resonance import (
     ZERO_FIELD_SPLITTING_MHZ,
     calculate_nv_resonance,
@@ -50,6 +51,27 @@ class NVResonanceResponse(BaseModel):
     projected_field_nt: float
 
 
+class ODMRSpectrumRequest(NVResonanceRequest):
+    """Input parameters for an ideal ODMR spectrum simulation."""
+
+    frequencies_mhz: list[FiniteFloat] = Field(
+        min_length=1,
+        max_length=5000,
+    )
+    contrast: FiniteFloat = Field(default=0.1, ge=0.0, le=0.5)
+    linewidth_mhz: PositiveFiniteFloat = 1.0
+
+
+class ODMRSpectrumResponse(BaseModel):
+    """Simulated ODMR frequencies and normalized fluorescence."""
+
+    frequencies_mhz: list[float]
+    fluorescence: list[float]
+    lower_mhz: float
+    upper_mhz: float
+    projected_field_nt: float
+
+
 @router.post("/resonance", response_model=NVResonanceResponse)
 def calculate_resonance(
     request: NVResonanceRequest,
@@ -71,4 +93,37 @@ def calculate_resonance(
         lower_mhz=result.lower_mhz,
         upper_mhz=result.upper_mhz,
         projected_field_nt=result.projected_field_nt,
+    )
+
+
+@router.post("/odmr/spectrum", response_model=ODMRSpectrumResponse)
+def calculate_odmr_spectrum(
+    request: ODMRSpectrumRequest,
+) -> ODMRSpectrumResponse:
+    """Simulate an ideal two-resonance NV ODMR spectrum."""
+    try:
+        resonance = calculate_nv_resonance(
+            magnetic_field_nt=request.magnetic_field_nt,
+            nv_axis=request.nv_axis,
+            zero_field_splitting_mhz=request.zero_field_splitting_mhz,
+        )
+
+        spectrum = simulate_odmr_spectrum(
+            resonance=resonance,
+            frequencies_mhz=tuple(request.frequencies_mhz),
+            contrast=request.contrast,
+            linewidth_mhz=request.linewidth_mhz,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return ODMRSpectrumResponse(
+        frequencies_mhz=list(spectrum.frequencies_mhz),
+        fluorescence=list(spectrum.fluorescence),
+        lower_mhz=resonance.lower_mhz,
+        upper_mhz=resonance.upper_mhz,
+        projected_field_nt=resonance.projected_field_nt,
     )
