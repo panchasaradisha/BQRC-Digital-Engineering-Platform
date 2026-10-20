@@ -16,7 +16,7 @@ https://www.ngdc.noaa.gov/IAGA/vmod/coeffs/igrf14coeffs.txt
 
 Local Dataset:
 
-data/reference/geomagnetic/igrf14coeffs.txt
+data/reference/geomagnetic/igrf14/raw/igrf14coeffs.txt
 
 ## Dataset Integrity
 
@@ -92,3 +92,21 @@ The coefficient dataset must remain unchanged.
 No coefficient may be fabricated or silently modified.
 
 The BQRC geomagnetic model must preserve source provenance, physical units, model epoch, and reference-frame conventions.
+
+## Dataset Consolidation Verification
+
+The existing canonical dataset and the newly downloaded
+NOAA-hosted IGRF-14 coefficient file were compared using SHA-256.
+
+Both files produced the same checksum:
+
+8F8D88403028FC4EE92C4F38D97B46E0A87E2CFC496045B43C9E26C1D6B0903C
+
+The existing dataset was retained at:
+
+data/reference/geomagnetic/igrf14/raw/igrf14coeffs.txt
+
+The redundant top-level copy was removed.
+
+The existing IGRF implementation passed 26 selected unit,
+scientific-reference, and orbit-integration tests.
