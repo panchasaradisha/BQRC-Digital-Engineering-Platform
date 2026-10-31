@@ -1,0 +1,47 @@
+{
+  "scenario_id": "leo-iss-like-nv-v1",
+  "epoch": "2027-07-18T10:00:00Z",
+  "duration_s": 5400.0,
+  "step_s": 10.0,
+  "orbit": {
+    "radius_m": 6771000.0,
+    "inclination_deg": 51.6
+  },
+  "attitude": {
+    "initial_body_to_ned": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rate_axis_body": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "rate_rad_s": 0.0
+  },
+  "nv_sensor": {
+    "sensor_id": "nv-0",
+    "nv_axis_body": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "contrast": 0.1,
+    "linewidth_mhz": 1.0,
+    "zero_field_splitting_mhz": 2870.0,
+    "reference_photon_count": 1000000.0,
+    "sweep_start_mhz": 2850.0,
+    "sweep_stop_mhz": 2890.0,
+    "sweep_points": 401,
+    "acquisition_period_s": 60.0
+  },
+  "estimator": {
+    "assumed_contrast": 0.1,
+    "assumed_linewidth_mhz": 1.0,
+    "assumed_zero_field_splitting_mhz": 2870.0
+  },
+  "seed": 2027,
+  "igrf_dataset": "data/reference/geomagnetic/igrf14/raw/igrf14coeffs.txt"
+}

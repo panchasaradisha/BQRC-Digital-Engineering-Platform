@@ -9,7 +9,7 @@ import pytest
 
 from bqrc.environment.simulator import SpaceEnvironmentState
 from bqrc.frames.attitude import Quaternion
-from bqrc.sensors.nv.environment_adapter import (
+from bqrc.simulation.nv_performance import (
     simulate_attitude_aware_nv_performance,
     simulate_nv_measurement,
     simulate_nv_performance,

@@ -1425,3 +1425,19 @@ VALIDATED
 ```
 
 while preserving complete scientific and engineering traceability throughout the BQRC Digital Engineering Platform.
+
+---
+
+# 44. Run Contract V1 Assumptions
+
+Added with `docs/design/RUN_CONTRACT_V1.md`. Status of each item: ASSUMED unless stated.
+
+| ID | Assumption | Status |
+|---|---|---|
+| RC-1 | The magnetic field is constant during one ODMR sweep (quasi-static). | ASSUMED |
+| RC-2 | Attitude is a kinematic profile (fixed or constant spin about a body axis); no attitude dynamics. | ASSUMED |
+| RC-3 | Truth is evaluated only at sensor-acquisition ticks. | ASSUMED (implementation choice) |
+| RC-4 | The orbit is ideal circular two-body, with no J2, drag or third bodies. | ASSUMED |
+| RC-5 | Estimator assumptions (contrast, linewidth, D) default to the sensor's true values, so default runs are optimistic. | ASSUMED; study mismatch via `EstimatorConfig` |
+| RC-6 | `reference_photon_count` is acquisition metadata available to the estimator. | ASSUMED |
+| RC-7 | `DataSource` follows the code's finer-grained set (with `HYBRID` and `MEASURED_PUBLIC` added) rather than the shorter list in `SYSTEM_ARCHITECTURE.md` section 14. | DECISION: amend the architecture document |

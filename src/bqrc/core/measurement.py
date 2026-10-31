@@ -5,6 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from bqrc.core.levels import ProcessingLevel
 from bqrc.core.provenance import DataSource
 from bqrc.core.quality import QualityFlag
 from bqrc.core.uncertainty import Uncertainty
@@ -24,6 +25,10 @@ class Measurement(BaseModel):
 
     sensor_id: str | None = None
     frame: str | None = None
+
+    level: ProcessingLevel | None = None
+    configuration_id: str | None = None
+    model_version: str | None = None
 
     metadata: dict[str, Any] = Field(default_factory=dict)
 

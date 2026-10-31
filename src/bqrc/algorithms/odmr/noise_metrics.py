@@ -12,8 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import isfinite, log10, sqrt
 
-from bqrc.algorithms.odmr.shot_noise import NoisyODMRSpectrum
-from bqrc.algorithms.odmr.spectrum import ODMRSpectrum
+from bqrc.sensors.nv.odmr_model import ODMRSpectrum
+from bqrc.sensors.nv.photodetection import NoisyODMRSpectrum
 
 
 @dataclass(frozen=True, slots=True)

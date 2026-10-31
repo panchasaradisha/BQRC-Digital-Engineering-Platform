@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field, field_validator
 
 from bqrc.algorithms.odmr.field_estimator import estimate_nv_field_from_odmr
 from bqrc.algorithms.odmr.field_uncertainty import analyze_nv_field_uncertainty
-from bqrc.algorithms.odmr.shot_noise import NoisyODMRSpectrum, simulate_photon_shot_noise
-from bqrc.algorithms.odmr.spectrum import simulate_odmr_spectrum
+from bqrc.sensors.nv.odmr_model import simulate_odmr_spectrum
+from bqrc.sensors.nv.photodetection import NoisyODMRSpectrum, simulate_photon_shot_noise
 from bqrc.sensors.nv.resonance import (
     ZERO_FIELD_SPLITTING_MHZ,
     calculate_nv_resonance,

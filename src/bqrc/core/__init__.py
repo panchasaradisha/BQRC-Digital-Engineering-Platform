@@ -1,5 +1,6 @@
 """Public scientific-core interface for the BQRC platform."""
 
+from bqrc.core.levels import ProcessingLevel
 from bqrc.core.measurement import Measurement
 from bqrc.core.parameter import Parameter, ParameterSource
 from bqrc.core.provenance import DataSource
@@ -12,6 +13,7 @@ __all__ = [
     "Measurement",
     "Parameter",
     "ParameterSource",
+    "ProcessingLevel",
     "QualityFlag",
     "SimulationTime",
     "Uncertainty",

@@ -12,3 +12,5 @@ class DataSource(StrEnum):
     REAL_HARDWARE = "real_hardware"
     DERIVED = "derived"
     USER_OVERRIDE = "user_override"
+    MEASURED_PUBLIC = "measured_public"
+    HYBRID = "hybrid"

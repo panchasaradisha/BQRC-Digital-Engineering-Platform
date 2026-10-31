@@ -13,10 +13,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import isfinite, sqrt
 
-ZERO_FIELD_SPLITTING_MHZ = 2870.0
-ELECTRON_GYROMAGNETIC_RATIO_MHZ_PER_T = 28_024.95
-
-NANOTESLA_PER_TESLA = 1_000_000_000.0
+from bqrc.core.constants import (
+    ELECTRON_GYROMAGNETIC_RATIO_MHZ_PER_T,
+    NANOTESLA_PER_TESLA,
+    ZERO_FIELD_SPLITTING_MHZ,
+)
 
 
 @dataclass(frozen=True)

@@ -21,14 +21,12 @@ from bqrc.algorithms.odmr.field_estimator import (
 from bqrc.algorithms.odmr.field_uncertainty import (
     analyze_nv_field_uncertainty,
 )
-from bqrc.algorithms.odmr.shot_noise import (
+from bqrc.core.constants import ZERO_FIELD_SPLITTING_MHZ
+from bqrc.sensors.nv.odmr_model import simulate_odmr_spectrum
+from bqrc.sensors.nv.photodetection import (
     simulate_photon_shot_noise,
 )
-from bqrc.algorithms.odmr.spectrum import simulate_odmr_spectrum
-from bqrc.sensors.nv.resonance import (
-    ZERO_FIELD_SPLITTING_MHZ,
-    calculate_nv_resonance,
-)
+from bqrc.sensors.nv.resonance import calculate_nv_resonance
 
 
 @dataclass(frozen=True, slots=True)

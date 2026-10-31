@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import inf, isfinite, sqrt
 
-from bqrc.sensors.nv.resonance import (
+from bqrc.core.constants import (
     ELECTRON_GYROMAGNETIC_RATIO_MHZ_PER_T,
     NANOTESLA_PER_TESLA,
     ZERO_FIELD_SPLITTING_MHZ,

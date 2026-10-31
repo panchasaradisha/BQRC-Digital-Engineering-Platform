@@ -12,16 +12,31 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import isfinite
+from typing import Protocol
 
 import numpy as np
 from scipy.optimize import least_squares
 
-from bqrc.algorithms.odmr.shot_noise import NoisyODMRSpectrum
-from bqrc.sensors.nv.resonance import (
+from bqrc.core.constants import (
     ELECTRON_GYROMAGNETIC_RATIO_MHZ_PER_T,
     NANOTESLA_PER_TESLA,
     ZERO_FIELD_SPLITTING_MHZ,
 )
+
+
+class MeasuredODMR(Protocol):
+    """Anything exposing a measured ODMR spectrum.
+
+    Satisfied by ``NoisyODMRSpectrum`` and by ``ODMRAcquisition``. The
+    estimator deliberately sees only frequencies and normalized
+    fluorescence, never the ideal spectrum or any truth value.
+    """
+
+    @property
+    def frequencies_mhz(self) -> tuple[float, ...]: ...
+
+    @property
+    def fluorescence(self) -> tuple[float, ...]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,7 +51,7 @@ class NVFieldEstimate:
 
 
 def estimate_nv_field_from_odmr(
-    measured: NoisyODMRSpectrum,
+    measured: MeasuredODMR,
     contrast: float = 0.1,
     linewidth_mhz: float = 1.0,
     zero_field_splitting_mhz: float = ZERO_FIELD_SPLITTING_MHZ,
