@@ -1,0 +1,12 @@
+.git
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+.venv-reference
+**/__pycache__
+frontend/dist
+frontend/node_modules
+tests
+notebooks
+experiments
