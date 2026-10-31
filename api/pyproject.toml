@@ -1,0 +1,10 @@
+[project]
+name = "bqrc-vercel-api"
+version = "0.1.0"
+description = "Compact BQRC NV measurement function for Vercel."
+requires-python = "~=3.12.0"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "numpy>=2.1,<3.0",
+    "pydantic>=2.9,<3.0",
+]

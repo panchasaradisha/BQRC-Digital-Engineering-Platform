@@ -74,7 +74,11 @@ export async function runNVMeasurement(
   request: NVMeasurementRequest,
   signal?: AbortSignal,
 ): Promise<NVMeasurementResponse> {
-  const response = await fetch('/api/v1/nv/odmr/measurement', {
+  const endpoint = import.meta.env.PROD
+    ? '/api/index'
+    : '/api/v1/nv/odmr/measurement'
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

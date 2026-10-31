@@ -1,31 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+  "framework": "vite",
+  "installCommand": "npm ci --prefix frontend",
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/index.py": {
+      "excludeFiles": "{.venv/**,.venv-reference/**,.pytest_cache/**,.mypy_cache/**,.ruff_cache/**,tests/**,notebooks/**,experiments/**,frontend/**,src/**}"
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/(.+\\..+)",
-      "dest": "/frontend/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/index.html"
-    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

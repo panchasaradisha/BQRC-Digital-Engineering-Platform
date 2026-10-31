@@ -306,3 +306,4 @@ checkpoints/
 Thumbs.db
 Desktop.ini
 .venv-reference/
+.vercel
