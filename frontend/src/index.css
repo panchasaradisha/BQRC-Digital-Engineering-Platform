@@ -1,24 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;600;700&display=swap');
-
 :root {
-  --ink-950: #10283c;
-  --ink-900: #183248;
-  --ink-850: #213b50;
-  --ink-800: #2c455a;
-  --ink-600: #596f81;
-  --ink-500: #718395;
-  --ink-400: #91a0ad;
-  --blue-700: #0b609a;
-  --blue-600: #1175b8;
-  --line: #dce5ed;
-  --font-sans: 'DM Sans', 'Segoe UI', sans-serif;
-  --font-display: 'Manrope', 'Segoe UI', sans-serif;
-  --font-mono: 'Roboto Mono', Consolas, monospace;
-  --shadow-card: 0 10px 38px rgba(29, 57, 82, 0.07);
+  --ink-950: #18232c;
+  --ink-900: #202e39;
+  --ink-850: #2a3945;
+  --ink-800: #334550;
+  --ink-600: #586a75;
+  --ink-500: #71808a;
+  --ink-400: #929da5;
+  --blue-700: #15526d;
+  --blue-600: #1c6787;
+  --line: #d2d9de;
+  --font-sans: 'Segoe UI', Arial, sans-serif;
+  --font-display: 'Segoe UI', Arial, sans-serif;
+  --font-mono: 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  --shadow-card: 0 1px 2px rgba(23, 36, 46, 0.05);
 
   font-family: var(--font-sans);
   color: var(--ink-900);
-  background: #f6f9fb;
+  background: #eef1f3;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -33,10 +31,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at 12% 3%, rgba(36, 137, 193, 0.07), transparent 27%),
-    radial-gradient(circle at 87% 21%, rgba(104, 83, 196, 0.06), transparent 26%),
-    #f6f9fb;
+  background: #eef1f3;
 }
 
 button,

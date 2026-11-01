@@ -1189,6 +1189,19 @@ main {
 .orientation-measurement dd { margin: 2px 0 0; overflow-wrap: anywhere; color: var(--ink-700); font: 650 7.2px/1.35 var(--font-mono); }
 .orientation-seed { margin: 8px 0 0; padding-top: 6px; border-top: 1px solid #edf1f4; color: var(--ink-400); font-size: 6.8px; }
 
+.orientation-dip-figure { margin: 9px 0 0; padding: 8px 7px 5px; border: 1px solid #e0e6ea; border-radius: 3px; background: #fafbfb; }
+.orientation-dip-figure figcaption { display: flex; align-items: baseline; justify-content: space-between; gap: 7px; color: var(--ink-600); }
+.orientation-dip-figure figcaption span { font-size: 7px; font-weight: 750; letter-spacing: .045em; text-transform: uppercase; }
+.orientation-dip-figure figcaption small { color: var(--ink-400); font: 600 6.5px/1 var(--font-mono); }
+.orientation-dip-chart { height: 104px; margin-top: 3px; }
+.dip-transition-labels { display: flex; justify-content: space-around; margin: -4px 12% 0; color: var(--nv-color); font: 750 6.5px/1 var(--font-mono); }
+.dip-placeholder { position: relative; display: flex; height: 100%; align-items: end; justify-content: center; overflow: hidden; color: var(--ink-400); background: linear-gradient(#f4f6f7 1px, transparent 1px); background-size: 100% 25%; font-size: 7px; }
+.dip-placeholder::before { position: absolute; right: 5%; bottom: 35%; left: 5%; height: 1px; background: #aeb9c0; content: ''; }
+.dip-placeholder i { position: absolute; bottom: 35%; width: 22%; height: 34%; border: 2px solid var(--nv-color); border-top: 0; border-radius: 0 0 50% 50%; opacity: .38; }
+.dip-placeholder i:first-child { left: 24%; }
+.dip-placeholder i:nth-child(2) { right: 24%; }
+.dip-placeholder span { position: relative; z-index: 1; margin-bottom: 5px; padding: 2px 4px; background: #fafbfb; }
+
 .combined-vector-grid { display: grid; margin-top: 10px; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); gap: 10px; }
 .combined-magnitude { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 13px 0 0; }
 .combined-magnitude > span { color: var(--ink-500); font-size: 8px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
@@ -1791,4 +1804,273 @@ a:focus-visible { outline: 2px solid #2d87c1; outline-offset: 2px; }
   .chart-area { height: 290px; }
   .chart-heading > span { display: none; }
   footer { align-items: flex-start; flex-direction: column; }
+}
+
+/* --------------------------------------------------------------------------
+   Instrument UI refinement
+   A restrained laboratory-console layer: flat surfaces, compact hierarchy,
+   square controls, and color reserved for state and scientific data.
+   -------------------------------------------------------------------------- */
+
+.topbar {
+  min-height: 58px;
+  padding: 0 clamp(18px, 4vw, 60px);
+  border-bottom-color: #cbd3d9;
+  background: #ffffff;
+  backdrop-filter: none;
+}
+
+.brand { gap: 10px; }
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  border-color: #9fb0bc;
+  border-radius: 3px;
+  color: #15526d;
+  background: #f4f6f7;
+  box-shadow: none;
+}
+.brand strong { font-size: 15px; letter-spacing: .11em; }
+.brand small { margin-top: 3px; font-size: 8px; letter-spacing: .12em; }
+.status-dot { width: 7px; height: 7px; box-shadow: none; }
+.version-tag,
+.override-count { border-radius: 3px; }
+
+.workspace-tabbar {
+  top: 58px;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 0 clamp(18px, 4vw, 60px);
+  border-bottom-color: #cbd3d9;
+  background: #f7f8f9;
+  backdrop-filter: none;
+}
+
+.workspace-tabbar button {
+  min-width: auto;
+  gap: 7px;
+  padding: 11px 14px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+}
+.workspace-tabbar button:hover { background: #eef1f3; }
+.workspace-tabbar button.active {
+  border-color: transparent;
+  border-bottom-color: #15526d;
+  color: #153f53;
+  background: transparent;
+  box-shadow: none;
+}
+.workspace-tabbar button > span:first-child,
+.workspace-tabbar button.active > span:first-child {
+  width: 22px;
+  height: 22px;
+  border-radius: 2px;
+  color: currentColor;
+  background: transparent;
+}
+.workspace-tabbar strong { font-size: 11px; font-weight: 650; }
+.workspace-tabbar small { font-size: 8px; }
+
+main { width: min(1380px, 100%); padding: 0 clamp(18px, 3.5vw, 46px) 44px; }
+
+.hero-section {
+  min-height: 210px;
+  padding: 36px 0 30px;
+  border-bottom: 1px solid #cfd7dc;
+}
+.hero-section::before { display: none; }
+.overline,
+.section-kicker {
+  color: #315d72;
+  font-size: 9px;
+  letter-spacing: .13em;
+}
+.hero-section h1 {
+  max-width: 780px;
+  margin: 12px 0 11px;
+  font-size: clamp(32px, 3.4vw, 46px);
+  font-weight: 600;
+  letter-spacing: -.032em;
+  line-height: 1.07;
+}
+.hero-section h1 span { color: inherit; font-weight: inherit; }
+.hero-section p:not(.section-kicker) { max-width: 720px; font-size: 13px; line-height: 1.6; }
+
+.hero-spec {
+  width: min(360px, 35vw);
+  margin: 0;
+  border-top: 1px solid #aebbc4;
+  border-bottom: 1px solid #aebbc4;
+}
+.hero-spec > div {
+  display: grid;
+  grid-template-columns: 105px 1fr;
+  gap: 14px;
+  padding: 10px 2px;
+  border-bottom: 1px solid #d6dde1;
+}
+.hero-spec > div:last-child { border-bottom: 0; }
+.hero-spec dt {
+  color: var(--ink-500);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.hero-spec dd { margin: 0; color: var(--ink-850); font: 600 10px/1.35 var(--font-mono); }
+
+.workspace-page { padding-top: 22px; }
+.workspace-page-hero {
+  min-height: 150px;
+  padding: 25px 28px;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: none;
+}
+.workspace-page-hero h1 { font-size: clamp(26px, 3vw, 38px); font-weight: 600; }
+.hardware-hero,
+.visualization-hero,
+.learn-hero,
+.architecture-hero { background: #ffffff; }
+
+.environment-story,
+.control-panel,
+.results-panel,
+.integration-card,
+.hardware-contract-card,
+.atlas-card,
+.operator-guide,
+.project-documents,
+.layer-stack-card,
+.boundary-card,
+.run-flow-card,
+.mission-lifecycle-card,
+.nv-vector-lab,
+.chart-card,
+.detail-card,
+.analysis-card,
+.range-card,
+.provenance-card,
+.calculation-card,
+.run-contract-card,
+.v1-traceability-card,
+.evidence-register {
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.environment-story { margin-top: 22px; border-color: #cbd5db; }
+.environment-heading { padding: 19px 21px 16px; }
+.environment-heading h2 { font-size: 20px; font-weight: 600; }
+.maturity-badge,
+.workspace-state,
+.run-contract-heading > span,
+.evidence-register-heading > span,
+.nv-vector-heading > span,
+.v1-status,
+.evidence-status {
+  border-radius: 3px;
+}
+.maturity-badge { color: #4d5f69; background: #f3f5f6; border-color: #cfd7dc; }
+
+.workspace-grid { gap: 16px; }
+.control-panel { top: 116px; padding: 19px; }
+.results-panel { padding: 20px; }
+.panel-heading h2,
+.results-header h2 { font-size: 19px; font-weight: 600; }
+
+.icon-button,
+.preset-row button,
+.connection-actions button,
+.input-shell,
+.default-profile-card,
+.override-summary,
+.error-banner,
+.export-button,
+.terminology-correction,
+.truth-boundary-note,
+.science-note,
+.coupling-note,
+.disturbance-stack,
+.effect-flow > div {
+  border-radius: 3px;
+}
+.icon-button:hover { transform: none; }
+.preset-row button { background: #ffffff; }
+
+.run-button {
+  border-radius: 3px;
+  background: #15526d;
+  box-shadow: none;
+}
+.run-button:hover:not(:disabled) { transform: none; background: #103f54; box-shadow: none; }
+
+.metric-grid { gap: 7px; }
+.metric-card {
+  border-top: 1px solid #d7dfe4;
+  border-left: 3px solid var(--tone);
+  border-radius: 3px;
+  background: #ffffff;
+}
+.metric-icon { border-radius: 2px; background: #f1f4f5; }
+.quality-strip,
+.pipeline-ribbon,
+.constant-reference-strip,
+.scenario-reference-grid { border-radius: 3px; }
+
+.tetrahedron-panel,
+.vector-method-panel,
+.combined-vector-summary,
+.component-plot,
+.transition-map-card,
+.ensemble-spectrum-card,
+.orientation-measurement,
+.contract-stage,
+.v1-requirement-item,
+.evidence-item,
+.hardware-node,
+.mission-phase,
+.artifact-grid article,
+.study-accordion details,
+.study-method-grid > section,
+.study-meaning-grid > section {
+  border-radius: 3px;
+  box-shadow: none;
+}
+
+.nv-vector-lab,
+.run-contract-card,
+.v1-traceability-card,
+.evidence-register,
+.science-note { background: #ffffff; }
+.orientation-value,
+.branch-pair > div,
+.vector-method-panel li,
+.verification-only,
+.requirement-id-list code,
+.local-references code,
+.contract-references code { border-radius: 2px; }
+
+.empty-icon { border-radius: 3px; }
+.empty-chart { background-size: 28px 28px; }
+.workspace-tab-panel,
+.workspace-page { animation: none; }
+
+@media (max-width: 860px) {
+  .hero-section { align-items: flex-start; flex-direction: column; gap: 24px; }
+  .hero-spec { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .topbar { min-height: 56px; }
+  .workspace-tabbar { top: 56px; }
+  .workspace-tabbar button { min-width: 104px; padding: 9px 8px 8px; }
+  .hero-section { padding: 28px 0 24px; }
+  .hero-section h1 { font-size: 32px; }
+  .hero-spec > div { grid-template-columns: 92px 1fr; }
+  .control-panel,
+  .results-panel { border-radius: 4px; }
 }

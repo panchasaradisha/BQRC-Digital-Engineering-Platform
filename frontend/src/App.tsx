@@ -34,7 +34,6 @@ import {
   RotateCcw,
   ScanLine,
   ShieldCheck,
-  Sparkles,
   Server,
   Target,
   Usb,
@@ -1366,20 +1365,18 @@ function App() {
         {activeWorkspaceTab === 'simulation' && <div className="workspace-tab-panel" role="tabpanel" id="workspace-panel" aria-labelledby="workspace-tab-simulation">
         <section className="hero-section">
           <div>
-            <div className="overline"><Sparkles size={14} /> Quantum sensor laboratory</div>
-            <h1>NV-center ODMR<br /><span>measurement studio</span></h1>
+            <div className="overline"><CircleDot size={13} /> NV magnetometry / simulation workspace</div>
+            <h1>NV-center ODMR measurement studio</h1>
             <p>
               Simulate photon-limited fluorescence, recover the NV-axis field magnitude,
               and inspect the local information bound in one reproducible workflow.
             </p>
           </div>
-          <div className="hero-orbit" aria-hidden="true">
-            <span className="orbit orbit-one" />
-            <span className="orbit orbit-two" />
-            <span className="orbit-core"><CircleDot size={35} /></span>
-            <span className="orbit-node node-one" />
-            <span className="orbit-node node-two" />
-          </div>
+          <dl className="hero-spec" aria-label="Current workspace configuration">
+            <div><dt>Run mode</dt><dd>Deterministic simulation</dd></div>
+            <div><dt>Sensor model</dt><dd>NV ODMR · four axes</dd></div>
+            <div><dt>Data class</dt><dd>Software-verified</dd></div>
+          </dl>
         </section>
 
         <section className="environment-story">
@@ -1801,6 +1798,19 @@ function App() {
                   const orientationTruth = measurement?.response.simulation.projected_field_nt ?? null
                   const orientationEstimate = measurement?.response.estimation?.projected_field_magnitude_nt ?? null
                   const orientationCrlb = measurement?.response.uncertainty?.crlb_std_nt ?? null
+                  const dipChartData = measurement
+                    ? measurement.response.simulation.frequencies_mhz.map((frequency, index) => ({
+                        frequency,
+                        ideal: measurement.response.simulation.ideal_fluorescence[index],
+                        measured: measurement.response.simulation.measured_fluorescence[index],
+                      }))
+                    : []
+                  const dipWindow = measurement
+                    ? [
+                        measurement.response.simulation.lower_mhz - form.linewidth * 2.25,
+                        measurement.response.simulation.upper_mhz + form.linewidth * 2.25,
+                      ] as [number, number]
+                    : null
                   return (
                     <section className={`orientation-measurement ${orientation.colorClass}`} key={orientation.id}>
                       <div className="orientation-card-heading">
@@ -1809,6 +1819,25 @@ function App() {
                       </div>
                       <p className="axis-vector">n̂ = {formatVector(orientation.axis, 3)}</p>
                       <div className="orientation-value"><small>Fitted |B · n̂|</small><strong>{orientationEstimate === null ? '—' : formatNumber(orientationEstimate, 0)} <span>nT</span></strong></div>
+                      <figure className="orientation-dip-figure">
+                        <figcaption><span>Two-dip ODMR response</span><small>mₛ = 0 ↔ ±1</small></figcaption>
+                        <div className="orientation-dip-chart">
+                          {dipChartData.length > 0 && measurement ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ComposedChart data={dipChartData} margin={{ top: 5, right: 4, left: 4, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="2 4" stroke="rgba(83, 103, 116, 0.13)" vertical={false} />
+                                <XAxis dataKey="frequency" type="number" domain={dipWindow ?? ['dataMin', 'dataMax']} allowDataOverflow tickCount={3} tick={{ fill: '#78858d', fontSize: 7 }} tickFormatter={(value) => Number(value).toFixed(1)} axisLine={{ stroke: '#ccd5da' }} tickLine={false} />
+                                <YAxis hide domain={['auto', 'auto']} />
+                                <ReferenceLine x={measurement.response.simulation.lower_mhz} stroke={orientation.color} strokeDasharray="2 2" opacity={0.72} />
+                                <ReferenceLine x={measurement.response.simulation.upper_mhz} stroke={orientation.color} strokeDasharray="2 2" opacity={0.72} />
+                                <Line type="monotone" dataKey="ideal" stroke={orientation.color} strokeWidth={1.6} dot={false} isAnimationActive={false} />
+                                <Line type="monotone" dataKey="measured" stroke={orientation.color} strokeWidth={.8} dot={false} opacity={0.38} isAnimationActive={false} />
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                          ) : <div className="dip-placeholder"><i /><i /><span>Run acquisition</span></div>}
+                        </div>
+                        <div className="dip-transition-labels"><span>ν−</span><span>ν+</span></div>
+                      </figure>
                       <dl>
                         <div><dt>ν−</dt><dd>{measurement ? `${formatNumber(measurement.response.simulation.lower_mhz, 4)} MHz` : '—'}</dd></div>
                         <div><dt>ν+</dt><dd>{measurement ? `${formatNumber(measurement.response.simulation.upper_mhz, 4)} MHz` : '—'}</dd></div>
@@ -1887,7 +1916,7 @@ function App() {
 
               <section className="ensemble-spectrum-card">
                 <div className="chart-heading compact-heading">
-                  <div><h4>Eight-transition four-channel fluorescence aggregate</h4><p>Two ODMR transitions × four simulated orientation families</p></div>
+                  <div><h4>Combined four-axis spectrum · eight dips</h4><p>NV1–NV4 overlaid · two ODMR transitions per orientation family</p></div>
                   <span>Reference aggregate · not a raw ensemble-detector trace</span>
                 </div>
                 <div className="ensemble-chart">
