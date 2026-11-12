@@ -2074,3 +2074,76 @@ main { width: min(1380px, 100%); padding: 0 clamp(18px, 3.5vw, 46px) 44px; }
   .control-panel,
   .results-panel { border-radius: 4px; }
 }
+
+/* Legibility baseline: scientific labels remain compact, but no longer require zooming. */
+body { font-size: 16px; }
+
+.brand-name { font-size: 14px; }
+.brand-eyebrow,
+.brand-subtitle { font-size: 11px; }
+.topbar-badge { font-size: 11px; }
+.workspace-tabbar strong { font-size: 13px; }
+.workspace-tabbar small { font-size: 10.5px; }
+.section-kicker { font-size: 11px; }
+
+.workspace-page-hero > div:first-child > p:not(.section-kicker),
+.hero-section > div:first-child > p:not(.section-kicker) {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+main :where(p:not(.metric-value), li, dd) {
+  font-size: clamp(12px, 0.82vw, 13px) !important;
+  line-height: 1.55;
+}
+
+main :where(small, dt) { font-size: 10.5px !important; }
+main :where(code, figcaption) { font-size: 11px !important; }
+main :where(label, input, select, button) { font-size: 12px; }
+
+main h2 { font-size: clamp(20px, 1.6vw, 24px); }
+main h3 { font-size: clamp(16px, 1.2vw, 19px); }
+main h4 { font-size: 14px; }
+
+.page-card-heading h2,
+.panel-heading h2,
+.results-header h2 { font-size: 20px; }
+.page-card-heading p { font-size: 12px !important; }
+.metric-eyebrow { font-size: 11px; }
+.metric-value { font-size: clamp(19px, 1.7vw, 24px); }
+.metric-value span { font-size: 11px; }
+.quality-strip strong { font-size: 12px; }
+.pipeline-ribbon p { font-size: 12px !important; }
+.pipeline-ribbon small { font-size: 10px !important; }
+.input-shell input,
+.input-shell.compact input { font-size: 12px; }
+.run-button,
+.export-button { font-size: 13px; }
+.orientation-card-heading > span { font-size: 12px; }
+.orientation-card-heading code,
+.axis-vector { font-size: 10.5px !important; }
+.orientation-value small,
+.orientation-measurement dt { font-size: 10px !important; }
+.orientation-value strong { font-size: 20px; }
+.orientation-value strong span { font-size: 11px; }
+.orientation-measurement dd { font-size: 10.5px !important; }
+.orientation-dip-figure figcaption span { font-size: 10.5px; }
+.orientation-dip-figure figcaption small,
+.dip-transition-labels { font-size: 9.5px !important; }
+.transition-scale,
+.transition-row > span { font-size: 10.5px; }
+.transition-row > code,
+.transition-marker b { font-size: 9.5px !important; }
+.ensemble-spectrum-card .chart-heading h4 { font-size: 14px; }
+.chart-heading p { font-size: 12px !important; }
+.chart-heading > span { font-size: 11px; }
+.nv-vector-evidence > span,
+.nv-vector-evidence a,
+.nv-vector-evidence code { font-size: 10.5px !important; }
+
+@media (max-width: 560px) {
+  body { font-size: 15px; }
+  .workspace-tabbar strong { font-size: 12px; }
+  .workspace-tabbar small { font-size: 10px; }
+  main :where(p:not(.metric-value), li, dd) { font-size: 12px !important; }
+}

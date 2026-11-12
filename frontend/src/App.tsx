@@ -1826,7 +1826,7 @@ function App() {
                             <ResponsiveContainer width="100%" height="100%">
                               <ComposedChart data={dipChartData} margin={{ top: 5, right: 4, left: 4, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="2 4" stroke="rgba(83, 103, 116, 0.13)" vertical={false} />
-                                <XAxis dataKey="frequency" type="number" domain={dipWindow ?? ['dataMin', 'dataMax']} allowDataOverflow tickCount={3} tick={{ fill: '#78858d', fontSize: 7 }} tickFormatter={(value) => Number(value).toFixed(1)} axisLine={{ stroke: '#ccd5da' }} tickLine={false} />
+                                <XAxis dataKey="frequency" type="number" domain={dipWindow ?? ['dataMin', 'dataMax']} allowDataOverflow tickCount={3} tick={{ fill: '#78858d', fontSize: 9 }} tickFormatter={(value) => Number(value).toFixed(1)} axisLine={{ stroke: '#ccd5da' }} tickLine={false} />
                                 <YAxis hide domain={['auto', 'auto']} />
                                 <ReferenceLine x={measurement.response.simulation.lower_mhz} stroke={orientation.color} strokeDasharray="2 2" opacity={0.72} />
                                 <ReferenceLine x={measurement.response.simulation.upper_mhz} stroke={orientation.color} strokeDasharray="2 2" opacity={0.72} />
@@ -1924,10 +1924,10 @@ function App() {
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={ensembleChartData} margin={{ top: 12, right: 12, left: -12, bottom: 4 }}>
                         <CartesianGrid strokeDasharray="4 5" stroke="rgba(113, 142, 177, 0.18)" vertical={false} />
-                        <XAxis dataKey="frequency" type="number" domain={transitionWindow ? [transitionWindow.start, transitionWindow.end] : ['dataMin', 'dataMax']} allowDataOverflow tickCount={7} tick={{ fill: '#75849a', fontSize: 10 }} axisLine={{ stroke: '#d8e2ee' }} tickLine={false} unit=" MHz" />
-                        <YAxis domain={['auto', 'auto']} tick={{ fill: '#75849a', fontSize: 10 }} axisLine={false} tickLine={false} width={55} />
-                        <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #d9e4ef', fontSize: 11 }} labelFormatter={(value) => `${Number(value).toFixed(3)} MHz`} />
-                        <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 10, paddingTop: 9 }} />
+                        <XAxis dataKey="frequency" type="number" domain={transitionWindow ? [transitionWindow.start, transitionWindow.end] : ['dataMin', 'dataMax']} allowDataOverflow tickCount={7} tick={{ fill: '#75849a', fontSize: 11 }} axisLine={{ stroke: '#d8e2ee' }} tickLine={false} unit=" MHz" />
+                        <YAxis domain={['auto', 'auto']} tick={{ fill: '#75849a', fontSize: 11 }} axisLine={false} tickLine={false} width={55} />
+                        <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #d9e4ef', fontSize: 12 }} labelFormatter={(value) => `${Number(value).toFixed(3)} MHz`} />
+                        <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 11, paddingTop: 9 }} />
                         {orientationMeasurements.flatMap(({ orientation, response: orientationResponse }) => [
                           <ReferenceLine key={`${orientation.id}-lower-aggregate`} x={orientationResponse.simulation.lower_mhz} stroke={orientation.color} strokeDasharray="3 4" opacity={0.7} />,
                           <ReferenceLine key={`${orientation.id}-upper-aggregate`} x={orientationResponse.simulation.upper_mhz} stroke={orientation.color} strokeDasharray="3 4" opacity={0.7} />,
@@ -2005,9 +2005,9 @@ function App() {
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={displayedChartData} margin={{ top: 10, right: 8, left: -20, bottom: 2 }}>
                         <CartesianGrid strokeDasharray="3 5" stroke="rgba(113, 142, 177, 0.16)" vertical={false} />
-                        <XAxis dataKey="frequency" type="number" domain={['dataMin', 'dataMax']} tickCount={5} tick={{ fill: '#8291a1', fontSize: 9 }} axisLine={{ stroke: '#d8e2ee' }} tickLine={false} />
-                        <YAxis tick={{ fill: '#8291a1', fontSize: 9 }} axisLine={false} tickLine={false} width={50} tickFormatter={(value) => Number(value).toExponential(1)} />
-                        <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #d9e4ef', fontSize: 11 }} labelFormatter={(value) => `${Number(value).toFixed(3)} MHz`} />
+                        <XAxis dataKey="frequency" type="number" domain={['dataMin', 'dataMax']} tickCount={5} tick={{ fill: '#8291a1', fontSize: 11 }} axisLine={{ stroke: '#d8e2ee' }} tickLine={false} />
+                        <YAxis tick={{ fill: '#8291a1', fontSize: 11 }} axisLine={false} tickLine={false} width={50} tickFormatter={(value) => Number(value).toExponential(1)} />
+                        <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #d9e4ef', fontSize: 12 }} labelFormatter={(value) => `${Number(value).toFixed(3)} MHz`} />
                         <ReferenceLine y={0} stroke="#8799aa" />
                         <Bar dataKey="residual" name="Fluorescence residual" fill="#6f5dcc" opacity={0.76} />
                       </ComposedChart>
@@ -2035,9 +2035,9 @@ function App() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 5" stroke="rgba(113, 142, 177, 0.16)" vertical={false} />
-                        <XAxis dataKey="frequency" type="number" domain={['dataMin', 'dataMax']} tickCount={5} tick={{ fill: '#8291a1', fontSize: 9 }} axisLine={{ stroke: '#d8e2ee' }} tickLine={false} />
-                        <YAxis tick={{ fill: '#8291a1', fontSize: 9 }} axisLine={false} tickLine={false} width={58} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}k`} />
-                        <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #d9e4ef', fontSize: 11 }} labelFormatter={(value) => `${Number(value).toFixed(3)} MHz`} />
+                        <XAxis dataKey="frequency" type="number" domain={['dataMin', 'dataMax']} tickCount={5} tick={{ fill: '#8291a1', fontSize: 11 }} axisLine={{ stroke: '#d8e2ee' }} tickLine={false} />
+                        <YAxis tick={{ fill: '#8291a1', fontSize: 11 }} axisLine={false} tickLine={false} width={58} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}k`} />
+                        <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #d9e4ef', fontSize: 12 }} labelFormatter={(value) => `${Number(value).toFixed(3)} MHz`} />
                         {orientationMeasurements.flatMap(({ orientation, response: orientationResponse }) => [
                           <ReferenceLine key={`${orientation.id}-lower-photons`} x={orientationResponse.simulation.lower_mhz} stroke={orientation.color} strokeDasharray="3 4" opacity={0.52} />,
                           <ReferenceLine key={`${orientation.id}-upper-photons`} x={orientationResponse.simulation.upper_mhz} stroke={orientation.color} strokeDasharray="3 4" opacity={0.52} />,
